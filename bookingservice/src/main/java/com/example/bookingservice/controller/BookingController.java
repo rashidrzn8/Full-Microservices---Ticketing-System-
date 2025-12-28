@@ -18,8 +18,9 @@ public class BookingController {
     public BookingController(final BookingService bookingService){
         this.bookingService = bookingService;
     }
-    @PostMapping("/booking")
+
+    @PostMapping(path = "/booking",consumes = "application/json", produces = "application/json")
     public BookingResponse createbooking(@RequestBody BookingRequest bookingRequest){
-        return null;
+        return bookingService.createBooking(bookingRequest);
     }
 }
