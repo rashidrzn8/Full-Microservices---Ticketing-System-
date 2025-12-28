@@ -31,7 +31,7 @@ public class InventoryController {
 
     @GetMapping("/inventory/events/{eventId}")
     public @ResponseBody EventInventoryResponse inventoryForEvents(@PathVariable("eventId") Long eventId){
-        return inventoryService.getAllEvents();
+        return inventoryService.getEvent(eventId);
     }
 
 }
