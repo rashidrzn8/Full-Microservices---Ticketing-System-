@@ -4,12 +4,12 @@ package com.example.inventoryService.controller;
 import com.example.inventoryService.response.EventInventoryResponse;
 import com.example.inventoryService.response.VenueInventoryResponse;
 import com.example.inventoryService.service.InventoryService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin("http://localhost:3000")
 @RequestMapping("/api/v1")
 public class InventoryController {
 
@@ -32,6 +32,12 @@ public class InventoryController {
     @GetMapping("/inventory/events/{eventId}")
     public @ResponseBody EventInventoryResponse inventoryForEvents(@PathVariable("eventId") Long eventId){
         return inventoryService.getEvent(eventId);
+    }
+
+    @PutMapping("/inventory/events/{eventId}/capacity/{capacity}")
+    public ResponseEntity<Void> updateInventory(@PathVariable("eventId") Long eventId,@PathVariable("capacity") Long ticketBooked){
+        inventoryService.updateCapacity(eventId,ticketBooked);
+        return ResponseEntity.ok().build();
     }
 
 }
