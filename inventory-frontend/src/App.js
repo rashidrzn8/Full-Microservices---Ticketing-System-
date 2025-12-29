@@ -1,93 +1,160 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 
 function App() {
-  const [events, setEvents] = useState([]);
+  const BASE_URL = "http://localhost:8090"; // API Gateway
+
+  // ---------- Booking ----------
+  const [name, setName] = useState("");
+  const [booking, setBooking] = useState(null);
+  const [bookingError, setBookingError] = useState("");
+
+  // ---------- Venue Inventory ----------
   const [venueId, setVenueId] = useState("");
-  const [venueInfo, setVenueInfo] = useState(null);
-  const [error, setError] = useState("");
+  const [venueInventory, setVenueInventory] = useState(null);
+  const [venueError, setVenueError] = useState("");
 
-  const backendUrl = "http://localhost:8080/api/v1";
+  // ---------- Event Inventory ----------
+  const [eventId, setEventId] = useState("");
+  const [eventInventory, setEventInventory] = useState(null);
+  const [eventError, setEventError] = useState("");
 
-  // Fetch all events
-  const fetchEvents = async () => {
+  // --------- Booking Handler ---------
+  const handleBooking = async () => {
+    setBooking(null);
+    setBookingError("");
     try {
-      const response = await axios.get(`${backendUrl}/inventory/events`);
-      console.log("Events response:", response.data); // check structure
-      setEvents(Array.isArray(response.data) ? response.data : []);
-      setError("");
-    } catch (err) {
-      console.error(err);
-      setError("Error fetching events");
+      const response = await axios.post(`${BASE_URL}/api/v1/booking`, { name });
+      setBooking(response.data); // Matches BookingResponse DTO
+    } catch (error) {
+      if (error.response) {
+        setBookingError(error.response.data);
+      } else {
+        setBookingError(error.message);
+      }
     }
   };
 
-  // Fetch venue info by ID
-  const fetchVenue = async () => {
-    if (!venueId) return;
+  // --------- Venue Inventory Handler ---------
+  const fetchVenueInventory = async () => {
+    setVenueInventory(null);
+    setVenueError("");
     try {
       const response = await axios.get(
-        `${backendUrl}/inventory/venue/${venueId}`
+        `${BASE_URL}/api/v1/inventory/venue/${venueId}`
       );
-      console.log("Venue response:", response.data); // check structure
-      setVenueInfo(response.data || null);
-      setError("");
-    } catch (err) {
-      console.error(err);
-      setVenueInfo(null);
-      setError("Error fetching venue info");
+      setVenueInventory(response.data); // Matches VenueInventoryResponse DTO
+    } catch (error) {
+      setVenueError("Failed to fetch venue inventory");
     }
   };
 
-  // Fetch events on page load
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  // --------- Event Inventory Handler ---------
+  const fetchEventInventory = async () => {
+    setEventInventory(null);
+    setEventError("");
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/v1/inventory/events/${eventId}`
+      );
+      setEventInventory(response.data); // Matches EventInventoryResponse DTO
+    } catch (error) {
+      setEventError("Failed to fetch event inventory");
+    }
+  };
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>Inventory Service</h1>
+      <h1>Booking & Inventory Dashboard</h1>
 
-      {/* Events List */}
-      <section>
-        <h2>All Events</h2>
-        {events.length > 0 ? (
-          <ul>
-            {events.map((event) => (
-              <li key={event.id}>
-                {event.eventName} - {event.eventDate}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No events available.</p>
-        )}
-      </section>
-
-      <hr />
-
-      {/* Venue Info */}
-      <section>
-        <h2>Check Venue</h2>
+      {/* -------- Booking -------- */}
+      <div
+        style={{
+          marginBottom: "30px",
+          border: "1px solid #ccc",
+          padding: "10px",
+        }}
+      >
+        <h2>Book a Slot</h2>
         <input
-          type="number"
-          placeholder="Enter Venue ID"
-          value={venueId}
-          onChange={(e) => setVenueId(e.target.value)}
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter your name"
         />
-        <button onClick={fetchVenue} style={{ marginLeft: "10px" }}>
-          Fetch Venue
-        </button>
-
-        {venueInfo && (
-          <div style={{ marginTop: "10px" }}>
-            <h3>{venueInfo.venueName}</h3>
-            <p>Total Capacity: {venueInfo.totalCapacity}</p>
+        <button onClick={handleBooking}>Book</button>
+        {booking && (
+          <div style={{ marginTop: "10px", color: "green" }}>
+            <strong>Booking Successful:</strong>
+            <p>User ID: {booking.userId}</p>
+            <p>Event ID: {booking.eventId}</p>
+            <p>Tickets: {booking.ticketCount}</p>
+            <p>Total Price: {booking.totalPrice}</p>
           </div>
         )}
-      </section>
+        {bookingError && <p style={{ color: "red" }}>{bookingError}</p>}
+      </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {/* -------- Venue Inventory -------- */}
+      <div
+        style={{
+          marginBottom: "30px",
+          border: "1px solid #ccc",
+          padding: "10px",
+        }}
+      >
+        <h2>Check Venue Inventory</h2>
+        <input
+          type="text"
+          value={venueId}
+          onChange={(e) => setVenueId(e.target.value)}
+          placeholder="Enter Venue ID"
+        />
+        <button onClick={fetchVenueInventory}>Fetch Venue Inventory</button>
+
+        {venueInventory && (
+          <div style={{ marginTop: "10px", color: "blue" }}>
+            <p>Venue ID: {venueInventory.id}</p>
+            <p>Name: {venueInventory.venueName}</p>
+            <p>Total Capacity: {venueInventory.totalCapacity}</p>
+          </div>
+        )}
+        {venueError && <p style={{ color: "red" }}>{venueError}</p>}
+      </div>
+
+      {/* -------- Event Inventory -------- */}
+      <div
+        style={{
+          marginBottom: "30px",
+          border: "1px solid #ccc",
+          padding: "10px",
+        }}
+      >
+        <h2>Check Event Inventory</h2>
+        <input
+          type="text"
+          value={eventId}
+          onChange={(e) => setEventId(e.target.value)}
+          placeholder="Enter Event ID"
+        />
+        <button onClick={fetchEventInventory}>Fetch Event Inventory</button>
+
+        {eventInventory && (
+          <div style={{ marginTop: "10px", color: "purple" }}>
+            <p>Event ID: {eventInventory.eventId}</p>
+            <p>Event Name: {eventInventory.event}</p>
+            <p>Capacity: {eventInventory.capacity}</p>
+            {eventInventory.venue && (
+              <p>
+                Venue: {eventInventory.venue.venueName} (Capacity:{" "}
+                {eventInventory.venue.totalCapacity})
+              </p>
+            )}
+            <p>Ticket Price: {eventInventory.ticketPrice}</p>
+          </div>
+        )}
+        {eventError && <p style={{ color: "red" }}>{eventError}</p>}
+      </div>
     </div>
   );
 }
